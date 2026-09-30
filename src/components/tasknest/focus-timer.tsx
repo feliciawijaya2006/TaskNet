@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, Coffee, Pause, Play, RotateCcw } from "lucide-react";
+import { CheckCircle2, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,10 +36,12 @@ function playAlert() {
 
 export function FocusTimer({
   task,
+  startSignal,
   onAddFocusSeconds,
   onComplete,
 }: {
   task: Task | null;
+  startSignal: number;
   onAddFocusSeconds: (seconds: number) => void;
   onComplete: () => void;
 }) {
@@ -47,9 +49,10 @@ export function FocusTimer({
   const [remaining, setRemaining] = useState(WORK_SECONDS);
   const [running, setRunning] = useState(false);
   const [sessions, setSessions] = useState(0);
-  const modeRef = useRef(mode);
-  modeRef.current = mode;
+  const addRef = useRef(onAddFocusSeconds);
+  addRef.current = onAddFocusSeconds;
 
+  const targetCycles = task ? Math.max(1, Math.ceil(task.duration / 25)) : 1;
   const total = mode === "work" ? WORK_SECONDS : BREAK_SECONDS;
 
   const reset = useCallback(() => {
@@ -58,34 +61,69 @@ export function FocusTimer({
     setRemaining(WORK_SECONDS);
   }, []);
 
+  // New task selected → reset cycle counter
   useEffect(() => {
     reset();
+    setSessions(0);
   }, [task?.id, reset]);
 
+  // "Start Focus" clicked → auto-start timer
+  useEffect(() => {
+    if (startSignal > 0 && task) {
+      setMode("work");
+      setRemaining(WORK_SECONDS);
+      setRunning(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startSignal]);
+
+  // Tick
   useEffect(() => {
     if (!running) return;
     const id = window.setInterval(() => {
-      setRemaining((prev) => {
-        if (prev > 1) {
-          if (modeRef.current === "work") onAddFocusSeconds(1);
-          return prev - 1;
-        }
-        if (modeRef.current === "work") {
-          onAddFocusSeconds(1);
-          setSessions((s) => s + 1);
-          setMode("break");
-          playAlert();
-          toast.success("Sesi fokus selesai!", { description: "Waktunya istirahat 5 menit." });
-          return BREAK_SECONDS;
-        }
-        setMode("work");
-        playAlert();
-        toast("Istirahat selesai", { description: "Siap lanjut 25 menit lagi?" });
-        return WORK_SECONDS;
-      });
+      setRemaining((prev) => Math.max(0, prev - 1));
+      if (mode === "work") addRef.current(1);
     }, 1000);
     return () => window.clearInterval(id);
-  }, [running, onAddFocusSeconds]);
+  }, [running, mode]);
+
+  // Phase transitions (automatic)
+  useEffect(() => {
+    if (remaining > 0 || !running) return;
+    playAlert();
+    if (mode === "work") {
+      const done = sessions + 1;
+      setSessions(done);
+      if (done >= targetCycles) {
+        setRunning(false);
+        setMode("work");
+        setRemaining(WORK_SECONDS);
+        toast.success(`Semua ${targetCycles} cycle selesai!`, {
+          description: "Estimasi durasi task tercapai. Tandai selesai atau lanjut 1 cycle lagi.",
+        });
+        return;
+      }
+      setMode("break");
+      setRemaining(BREAK_SECONDS);
+      toast.success(`Cycle ${done}/${targetCycles} selesai!`, {
+        description: "Istirahat 5 menit dimulai otomatis.",
+      });
+    } else {
+      setMode("work");
+      setRemaining(WORK_SECONDS);
+      toast("Istirahat selesai", { description: `Cycle ${sessions + 1}/${targetCycles} dimulai.` });
+    }
+  }, [remaining, running, mode, sessions, targetCycles]);
+
+  const skipPhase = () => {
+    if (mode === "work") {
+      setMode("break");
+      setRemaining(BREAK_SECONDS);
+    } else {
+      setMode("work");
+      setRemaining(WORK_SECONDS);
+    }
+  };
 
   return (
     <Card className="card-lift">
@@ -118,8 +156,20 @@ export function FocusTimer({
           </p>
           <Progress value={((total - remaining) / total) * 100} className="mt-4" />
           <p className="mt-2 text-xs text-muted-foreground">
-            {sessions} sesi Pomodoro selesai hari ini
+            {task
+              ? `Cycle ${Math.min(sessions + (mode === "work" ? 1 : 0), targetCycles) || 1} dari ${targetCycles} · ${sessions} selesai`
+              : "Belum ada task aktif"}
           </p>
+          {task ? (
+            <div className="mt-2 flex justify-center gap-1">
+              {Array.from({ length: targetCycles }).map((_, i) => (
+                <span
+                  key={i}
+                  className={`size-2 rounded-full ${i < sessions ? "bg-primary" : "bg-muted"}`}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap justify-center gap-2">
@@ -130,16 +180,8 @@ export function FocusTimer({
           <Button variant="outline" onClick={reset} disabled={!task}>
             <RotateCcw /> Reset
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setRunning(false);
-              setMode((m) => (m === "work" ? "break" : "work"));
-              setRemaining(mode === "work" ? BREAK_SECONDS : WORK_SECONDS);
-            }}
-            disabled={!task}
-          >
-            <Coffee /> Ganti mode
+          <Button variant="outline" onClick={skipPhase} disabled={!task}>
+            <SkipForward /> {mode === "work" ? "Lewati ke istirahat" : "Lewati istirahat"}
           </Button>
           <Button
             variant="secondary"

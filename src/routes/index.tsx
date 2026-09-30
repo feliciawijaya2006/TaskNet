@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ListChecks, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +44,12 @@ function Index() {
     addFocusSeconds,
     setDailyBudgetHours,
   } = nest;
+
+  const [startSignal, setStartSignal] = useState(0);
+  const startFocus = (id: string) => {
+    setActiveTask(id);
+    setStartSignal((n) => n + 1);
+  };
 
   const sorted = useMemo(() => sortByPriority(tasks), [tasks]);
   const activeList = sorted.filter((t) => t.status !== "done");
@@ -114,7 +120,7 @@ function Index() {
                     key={task.id}
                     task={task}
                     isActive={task.id === activeTaskId}
-                    onStartFocus={() => setActiveTask(task.id)}
+                    onStartFocus={() => startFocus(task.id)}
                     onToggleScheduled={() => toggleScheduled(task.id)}
                     onComplete={() => setStatus(task.id, "done")}
                     onRemove={() => removeTask(task.id)}
@@ -128,7 +134,7 @@ function Index() {
             tasks={scheduled}
             budgetHours={dailyBudgetHours}
             onRemove={toggleScheduled}
-            onStartFocus={setActiveTask}
+            onStartFocus={startFocus}
           />
 
           {doneList.length > 0 ? (
@@ -142,7 +148,7 @@ function Index() {
                     key={task.id}
                     task={task}
                     isActive={false}
-                    onStartFocus={() => setActiveTask(task.id)}
+                    onStartFocus={() => startFocus(task.id)}
                     onToggleScheduled={() => toggleScheduled(task.id)}
                     onComplete={() => setStatus(task.id, "done")}
                     onRemove={() => removeTask(task.id)}
@@ -156,6 +162,7 @@ function Index() {
         <aside className="grid content-start gap-6">
           <FocusTimer
             task={activeTask}
+            startSignal={startSignal}
             onAddFocusSeconds={(s) => activeTaskId && addFocusSeconds(activeTaskId, s)}
             onComplete={() => activeTaskId && setStatus(activeTaskId, "done")}
           />
