@@ -41,8 +41,6 @@ export function TaskCard({
   const score = priorityScore(task);
   const level = priorityLevel(score);
   const overdue = new Date(task.deadline).getTime() < Date.now() && task.status !== "done";
-  const nextAction = task.scheduled ? "focus" : "schedule";
-
   return (
     <Card
       className={cn(
