@@ -41,6 +41,7 @@ export function TaskCard({
   const score = priorityScore(task);
   const level = priorityLevel(score);
   const overdue = new Date(task.deadline).getTime() < Date.now() && task.status !== "done";
+  const nextAction = task.scheduled ? "focus" : "schedule";
 
   return (
     <Card
@@ -85,15 +86,32 @@ export function TaskCard({
           {task.status === "done" ? <Badge variant="secondary">Done</Badge> : null}
         </div>
 
+        {task.status !== "done" ? (
+          <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+            {nextAction === "schedule"
+              ? "Langkah berikutnya: masukkan tugas ini ke jadwal harian."
+              : "Sudah dijadwalkan. Anda siap memulai sesi fokus."}
+          </p>
+        ) : null}
+
         <div className="flex flex-wrap gap-2">
           {task.status !== "done" ? (
             <>
-              <Button size="sm" onClick={onStartFocus}>
-                <Play /> Start Focus
-              </Button>
-              <Button size="sm" variant="outline" onClick={onToggleScheduled}>
+              <Button
+                size="sm"
+                variant={task.scheduled ? "outline" : "default"}
+                onClick={onToggleScheduled}
+              >
                 {task.scheduled ? <CalendarMinus /> : <CalendarPlus />}
                 {task.scheduled ? "Keluarkan" : "Jadwalkan"}
+              </Button>
+              <Button
+                size="sm"
+                variant={task.scheduled ? "default" : "outline"}
+                onClick={onStartFocus}
+                disabled={!task.scheduled}
+              >
+                <Play /> Mulai fokus
               </Button>
               <Button size="sm" variant="ghost" onClick={onComplete}>
                 <CheckCircle2 /> Selesai
