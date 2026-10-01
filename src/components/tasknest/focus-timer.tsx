@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
+import { CheckCircle2, Pause, Play, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -115,16 +115,6 @@ export function FocusTimer({
     }
   }, [remaining, running, mode, sessions, targetCycles]);
 
-  const skipPhase = () => {
-    if (mode === "work") {
-      setMode("break");
-      setRemaining(BREAK_SECONDS);
-    } else {
-      setMode("work");
-      setRemaining(WORK_SECONDS);
-    }
-  };
-
   return (
     <Card className="card-lift scroll-mt-6" id="focus-timer">
       <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -184,9 +174,6 @@ export function FocusTimer({
           </Button>
           <Button variant="outline" onClick={reset} disabled={!task}>
             <RotateCcw /> Ulangi
-          </Button>
-          <Button variant="outline" onClick={skipPhase} disabled={!task}>
-            <SkipForward /> {mode === "work" ? "Lewati ke istirahat" : "Lewati istirahat"}
           </Button>
           <Button
             variant="secondary"

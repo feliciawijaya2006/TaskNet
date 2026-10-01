@@ -10,7 +10,6 @@ import { TaskForm } from "@/components/tasknest/task-form";
 import { TaskCard } from "@/components/tasknest/task-card";
 import { DailySchedule } from "@/components/tasknest/daily-schedule";
 import { FocusTimer } from "@/components/tasknest/focus-timer";
-import { Dashboard } from "@/components/tasknest/dashboard";
 import { WorkflowGuide } from "@/components/tasknest/workflow-guide";
 
 const title = "TaskNest — Personal Task & Focus Planner";
@@ -171,16 +170,17 @@ function Index() {
                 </Card>
               ) : null}
 
-              <Dashboard tasks={tasks} />
             </div>
 
             <aside className="grid content-start gap-6">
-              <FocusTimer
-                task={activeTask}
-                startSignal={startSignal}
-                onAddFocusSeconds={(s) => activeTaskId && addFocusSeconds(activeTaskId, s)}
-                onComplete={() => activeTaskId && setStatus(activeTaskId, "done")}
-              />
+              {activeTask ? (
+                <FocusTimer
+                  task={activeTask}
+                  startSignal={startSignal}
+                  onAddFocusSeconds={(s) => activeTaskId && addFocusSeconds(activeTaskId, s)}
+                  onComplete={() => activeTaskId && setStatus(activeTaskId, "done")}
+                />
+              ) : null}
               <TaskForm onAdd={addTask} />
             </aside>
           </div>

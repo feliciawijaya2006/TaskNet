@@ -67,14 +67,11 @@ export function TaskCard({
             ) : null}
           </div>
           <Badge variant="outline" className={cn("shrink-0", priorityStyles[level])}>
-            {score}
+            {priorityLabel[level]} · {score}
           </Badge>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline" className={priorityStyles[level]}>
-            {priorityLabel[level]}
-          </Badge>
           <Badge variant="secondary">{task.category}</Badge>
           <span className={cn("inline-flex items-center gap-1", overdue && "text-destructive")}>
             <CalendarClock className="size-3.5" /> {deadlineLabel(task.deadline)}
@@ -85,14 +82,6 @@ export function TaskCard({
           {task.status === "in-progress" ? <Badge>Sedang dikerjakan</Badge> : null}
           {task.status === "done" ? <Badge variant="secondary">Done</Badge> : null}
         </div>
-
-        {task.status !== "done" ? (
-          <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-            {nextAction === "schedule"
-              ? "Langkah berikutnya: masukkan tugas ini ke jadwal harian."
-              : "Sudah dijadwalkan. Anda siap memulai sesi fokus."}
-          </p>
-        ) : null}
 
         <div className="flex flex-wrap gap-2">
           {task.status !== "done" ? (
