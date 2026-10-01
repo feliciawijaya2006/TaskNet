@@ -37,10 +37,13 @@ export function DailySchedule({
   }
 
   return (
-    <Card className="card-lift">
+    <Card className="card-lift scroll-mt-6" id="daily-schedule">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <CalendarRange className="size-4" /> Daily Schedule
+          <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            3
+          </span>
+          <CalendarRange className="size-4" /> Jadwal hari ini
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -58,7 +61,7 @@ export function DailySchedule({
 
         {slots.length === 0 ? (
           <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-            Belum ada task di jadwal. Tekan “Jadwalkan” pada task prioritas teratas.
+            Belum ada tugas di jadwal. Pilih “Jadwalkan” pada tugas yang ingin dikerjakan.
           </p>
         ) : (
           <ul className="grid gap-2">
@@ -81,8 +84,8 @@ export function DailySchedule({
                   <span className="text-xs text-muted-foreground">{formatMinutes(task.duration)}</span>
                 </span>
                 {!fits ? <AlertTriangle className="size-4 shrink-0 text-destructive" /> : null}
-                <Button size="icon" variant="ghost" onClick={() => onStartFocus(task.id)} aria-label="Start focus">
-                  <Play />
+                <Button size="sm" onClick={() => onStartFocus(task.id)} aria-label={`Mulai fokus ${task.title}`}>
+                  <Play /> Mulai fokus
                 </Button>
                 <Button size="icon" variant="ghost" onClick={() => onRemove(task.id)} aria-label="Keluarkan dari jadwal">
                   <X />

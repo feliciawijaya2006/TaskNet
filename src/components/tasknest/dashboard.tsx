@@ -11,9 +11,9 @@ export function Dashboard({ tasks }: { tasks: Task[] }) {
   const completion = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
 
   const stats = [
-    { label: "To Do", value: todo, icon: ListTodo },
-    { label: "In Progress", value: inProgress, icon: Loader2 },
-    { label: "Done", value: done, icon: CheckCircle2 },
+    { label: "Belum dikerjakan", value: todo, icon: ListTodo },
+    { label: "Sedang dikerjakan", value: inProgress, icon: Loader2 },
+    { label: "Selesai", value: done, icon: CheckCircle2 },
     { label: "Waktu fokus", value: formatMinutes(focusMinutes), icon: Timer },
   ];
 

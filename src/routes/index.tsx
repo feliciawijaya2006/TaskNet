@@ -11,6 +11,7 @@ import { TaskCard } from "@/components/tasknest/task-card";
 import { DailySchedule } from "@/components/tasknest/daily-schedule";
 import { FocusTimer } from "@/components/tasknest/focus-timer";
 import { Dashboard } from "@/components/tasknest/dashboard";
+import { WorkflowGuide } from "@/components/tasknest/workflow-guide";
 
 const title = "TaskNest — Personal Task & Focus Planner";
 const description =
@@ -59,6 +60,8 @@ function Index() {
     [tasks],
   );
   const activeTask = tasks.find((t) => t.id === activeTaskId) ?? null;
+  const workflowStep = tasks.length === 0 ? 1 : scheduled.length === 0 ? 2 : 3;
+  const isFirstTask = tasks.length === 0;
 
   return (
     <div className="min-h-screen">
@@ -71,14 +74,14 @@ function Index() {
             <div>
               <h1 className="text-lg font-bold tracking-tight">TaskNest</h1>
               <p className="text-xs text-muted-foreground">
-                Masukkan tugas, tentukan prioritas, susun jadwal, lalu fokus mengerjakannya.
+                Rencanakan satu tugas, lalu fokus sampai selesai.
               </p>
             </div>
           </div>
           <div className="flex items-end gap-2">
             <div className="grid gap-1.5">
               <Label htmlFor="budget" className="text-xs">
-                Daily time budget (jam)
+                Waktu kerja hari ini (jam)
               </Label>
               <Input
                 id="budget"
@@ -95,79 +98,93 @@ function Index() {
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="grid gap-6">
-          <Dashboard tasks={tasks} />
+      <main className="mx-auto max-w-6xl px-4 py-6">
+        <WorkflowGuide currentStep={workflowStep} />
 
-          <section className="grid gap-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-primary" />
-              <h2 className="font-semibold">Smart Task List</h2>
-              <span className="text-xs text-muted-foreground">
-                Diurutkan otomatis: deadline 45% · importance 35% · effort 20%
-              </span>
+        {isFirstTask ? (
+          <div className="mx-auto mt-6 max-w-2xl">
+            <TaskForm onAdd={addTask} isFirstTask />
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="grid content-start gap-6">
+
+              <section className="grid scroll-mt-6 gap-3" id="task-list">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    2
+                  </span>
+                  <Sparkles className="size-4 text-primary" />
+                  <h2 className="font-semibold">Tugas Anda</h2>
+                  <span className="text-xs text-muted-foreground">
+                    Urutan terbaik sudah disiapkan otomatis
+                  </span>
+                </div>
+                {activeList.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                      Semua tugas sudah selesai. Tambahkan tugas baru saat Anda siap.
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    {activeList.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        isActive={task.id === activeTaskId}
+                        onStartFocus={() => startFocus(task.id)}
+                        onToggleScheduled={() => toggleScheduled(task.id)}
+                        onComplete={() => setStatus(task.id, "done")}
+                        onRemove={() => removeTask(task.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <DailySchedule
+                tasks={scheduled}
+                budgetHours={dailyBudgetHours}
+                onRemove={toggleScheduled}
+                onStartFocus={startFocus}
+              />
+
+              {doneList.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Tugas selesai ({doneList.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 sm:grid-cols-2">
+                    {doneList.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        isActive={false}
+                        onStartFocus={() => startFocus(task.id)}
+                        onToggleScheduled={() => toggleScheduled(task.id)}
+                        onComplete={() => setStatus(task.id, "done")}
+                        onRemove={() => removeTask(task.id)}
+                      />
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <Dashboard tasks={tasks} />
             </div>
-            {activeList.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center text-sm text-muted-foreground">
-                  Belum ada task aktif. Tambahkan task pertama Anda di Task Inbox.
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                {activeList.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    isActive={task.id === activeTaskId}
-                    onStartFocus={() => startFocus(task.id)}
-                    onToggleScheduled={() => toggleScheduled(task.id)}
-                    onComplete={() => setStatus(task.id, "done")}
-                    onRemove={() => removeTask(task.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
 
-          <DailySchedule
-            tasks={scheduled}
-            budgetHours={dailyBudgetHours}
-            onRemove={toggleScheduled}
-            onStartFocus={startFocus}
-          />
-
-          {doneList.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Selesai ({doneList.length})</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                {doneList.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    isActive={false}
-                    onStartFocus={() => startFocus(task.id)}
-                    onToggleScheduled={() => toggleScheduled(task.id)}
-                    onComplete={() => setStatus(task.id, "done")}
-                    onRemove={() => removeTask(task.id)}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
-
-        <aside className="grid content-start gap-6">
-          <FocusTimer
-            task={activeTask}
-            startSignal={startSignal}
-            onAddFocusSeconds={(s) => activeTaskId && addFocusSeconds(activeTaskId, s)}
-            onComplete={() => activeTaskId && setStatus(activeTaskId, "done")}
-          />
-          <TaskForm onAdd={addTask} />
-        </aside>
+            <aside className="grid content-start gap-6">
+              <FocusTimer
+                task={activeTask}
+                startSignal={startSignal}
+                onAddFocusSeconds={(s) => activeTaskId && addFocusSeconds(activeTaskId, s)}
+                onComplete={() => activeTaskId && setStatus(activeTaskId, "done")}
+              />
+              <TaskForm onAdd={addTask} />
+            </aside>
+          </div>
+        )}
       </main>
     </div>
   );

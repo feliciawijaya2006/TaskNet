@@ -126,9 +126,14 @@ export function FocusTimer({
   };
 
   return (
-    <Card className="card-lift">
+    <Card className="card-lift scroll-mt-6" id="focus-timer">
       <CardHeader className="flex flex-row items-center justify-between gap-2">
-        <CardTitle className="text-base">Focus Mode</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            3
+          </span>
+          Sesi fokus
+        </CardTitle>
         <Badge variant={mode === "work" ? "default" : "secondary"}>
           {mode === "work" ? "Kerja 25 menit" : "Istirahat 5 menit"}
         </Badge>
@@ -145,12 +150,12 @@ export function FocusTimer({
             </>
           ) : (
             <p className="text-muted-foreground">
-              Pilih “Start Focus” pada salah satu task untuk mulai sesi Pomodoro.
+              Timer akan aktif setelah Anda membuat, menjadwalkan, lalu memilih “Mulai fokus” pada sebuah tugas.
             </p>
           )}
         </div>
 
-        <div className="text-center">
+        {task ? <div className="text-center">
           <p className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
             {formatClock(remaining)}
           </p>
@@ -170,15 +175,15 @@ export function FocusTimer({
               ))}
             </div>
           ) : null}
-        </div>
+        </div> : null}
 
-        <div className="flex flex-wrap justify-center gap-2">
+        {task ? <div className="flex flex-wrap justify-center gap-2">
           <Button onClick={() => setRunning((r) => !r)} disabled={!task}>
             {running ? <Pause /> : <Play />}
-            {running ? "Pause" : "Start"}
+            {running ? "Jeda" : "Lanjutkan"}
           </Button>
           <Button variant="outline" onClick={reset} disabled={!task}>
-            <RotateCcw /> Reset
+            <RotateCcw /> Ulangi
           </Button>
           <Button variant="outline" onClick={skipPhase} disabled={!task}>
             <SkipForward /> {mode === "work" ? "Lewati ke istirahat" : "Lewati istirahat"}
@@ -192,9 +197,9 @@ export function FocusTimer({
             }}
             disabled={!task}
           >
-            <CheckCircle2 /> Complete Task
+            <CheckCircle2 /> Tandai selesai
           </Button>
-        </div>
+        </div> : null}
       </CardContent>
     </Card>
   );
