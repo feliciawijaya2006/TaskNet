@@ -51,6 +51,14 @@ export function FocusTimer({
   const [sessions, setSessions] = useState(0);
   const addRef = useRef(onAddFocusSeconds);
   addRef.current = onAddFocusSeconds;
+  // Timestamp-based so the timer stays correct when the tab is in the background
+  const endAtRef = useRef(0);
+  const lastTickRef = useRef(0);
+  const pendingMsRef = useRef(0);
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const remainingRef = useRef(remaining);
+  remainingRef.current = remaining;
 
   const targetCycles = task ? Math.max(1, Math.ceil(task.duration / 25)) : 1;
   const total = mode === "work" ? WORK_SECONDS : BREAK_SECONDS;
@@ -70,27 +78,53 @@ export function FocusTimer({
   // "Start Focus" clicked → auto-start timer
   useEffect(() => {
     if (startSignal > 0 && task) {
+      setRunning(false);
       setMode("work");
       setRemaining(WORK_SECONDS);
-      setRunning(true);
+      remainingRef.current = WORK_SECONDS;
+      setTimeout(() => setRunning(true), 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startSignal]);
 
-  // Tick
+  // Tick (based on real clock time)
   useEffect(() => {
     if (!running) return;
-    const id = window.setInterval(() => {
-      setRemaining((prev) => Math.max(0, prev - 1));
-      if (mode === "work") addRef.current(1);
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [running, mode]);
+    const start = Date.now();
+    endAtRef.current = start + remainingRef.current * 1000;
+    lastTickRef.current = start;
+    const tick = () => {
+      const now = Date.now();
+      if (modeRef.current === "work") {
+        const to = Math.min(now, endAtRef.current);
+        pendingMsRef.current += Math.max(0, to - lastTickRef.current);
+        const s = Math.floor(pendingMsRef.current / 1000);
+        if (s > 0) {
+          addRef.current(s);
+          pendingMsRef.current -= s * 1000;
+        }
+      }
+      lastTickRef.current = now;
+      setRemaining(Math.max(0, Math.ceil((endAtRef.current - now) / 1000)));
+    };
+    const id = window.setInterval(tick, 1000);
+    const onVisible = () => document.visibilityState === "visible" && tick();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [running]);
 
-  // Phase transitions (automatic)
+  // Phase transitions (automatic, catches up after background time)
   useEffect(() => {
     if (remaining > 0 || !running) return;
     playAlert();
+    const phaseEnd = endAtRef.current;
+    const nextRemaining = (dur: number) => {
+      endAtRef.current = phaseEnd + dur * 1000;
+      return Math.max(1, Math.ceil((endAtRef.current - Date.now()) / 1000));
+    };
     if (mode === "work") {
       const done = sessions + 1;
       setSessions(done);
@@ -104,13 +138,14 @@ export function FocusTimer({
         return;
       }
       setMode("break");
-      setRemaining(BREAK_SECONDS);
+      setRemaining(nextRemaining(BREAK_SECONDS));
       toast.success(`Cycle ${done}/${targetCycles} selesai!`, {
         description: "Istirahat 5 menit dimulai otomatis.",
       });
     } else {
+      lastTickRef.current = phaseEnd;
       setMode("work");
-      setRemaining(WORK_SECONDS);
+      setRemaining(nextRemaining(WORK_SECONDS));
       toast("Istirahat selesai", { description: `Cycle ${sessions + 1}/${targetCycles} dimulai.` });
     }
   }, [remaining, running, mode, sessions, targetCycles]);
